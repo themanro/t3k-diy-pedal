@@ -52,6 +52,21 @@ npm install
 npm run dev           # http://localhost:3001
 ```
 
+## Deploying
+
+The app lives at <https://www.tone3000.com/diy-pedal/app>. It is a static build:
+`.github/workflows/app.yml` builds `app/` on every push that touches it and publishes
+`dist/` to this repo's GitHub Pages under `app/`, and the TONE3000 site
+(`next.config.mjs` `rewrites()`) proxies `/diy-pedal/app/*` to that Pages origin. The
+two deploy independently; changing the app never requires a site deploy.
+
+Production builds use `base: '/diy-pedal/app/'` (see `vite.config.ts`, override with
+`VITE_BASE`), and the OAuth redirect URI defaults to the page's own URL, so the build
+needs only `VITE_PUBLISHABLE_KEY`. The workflow reads it from the `T3K_PUBLISHABLE_KEY`
+secret in the repo's "Pages" environment; that key must have
+`https://www.tone3000.com/diy-pedal/app` registered as a redirect URI. One-time setup:
+repo Settings > Pages > Source: GitHub Actions.
+
 ## Flashing
 
 1. **Flash to pedal** builds the bank image.

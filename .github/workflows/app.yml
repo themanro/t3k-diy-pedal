@@ -1,0 +1,94 @@
+name: App
+
+# Builds the companion web app on every change and publishes it to GitHub
+# Pages, which is the origin tone3000.com proxies for
+# https://www.tone3000.com/diy-pedal/app (a rewrite in the site's next.config).
+#
+# The build is made for that URL (Vite base /diy-pedal/app/), so the Pages
+# site is not meant to be browsed directly: its root redirects to the live
+# page. Pull requests only build, to catch type and bundling errors.
+#
+# Secret T3K_PUBLISHABLE_KEY in the "Pages" environment: a TONE3000 publishable
+# key (t3k_pub_..., Settings > API Keys) with https://www.tone3000.com/diy-pedal/app
+# registered as a redirect URI. Environment secrets are only visible to jobs
+# that declare the environment, hence `environment: Pages` on the build job.
+# The deploy job uses github-pages, the environment Pages itself deploys to.
+on:
+  push:
+    branches: [main, t3k-pedal]
+    paths: [app/**, .github/workflows/app.yml]
+  pull_request:
+    paths: [app/**, .github/workflows/app.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  APP_URL: https://www.tone3000.com/diy-pedal/app
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    environment: Pages
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        env:
+          VITE_PUBLISHABLE_KEY: ${{ secrets.T3K_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$VITE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Secret T3K_PUBLISHABLE_KEY is not set in the Pages environment (Settings > Environments > Pages)."
+            exit 1
+          fi
+          npm run build
+
+      # Pages serves the artifact at /<repo>/, so the app goes in app/ and the
+      # root points at the real URL.
+      - name: Stage Pages site
+        run: |
+          mkdir -p site/app
+          cp -R dist/. site/app/
+          cat > site/index.html <<EOF
+          <!doctype html>
+          <meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=${APP_URL}">
+          <title>TONE3000 DIY Pedal</title>
+          <a href="${APP_URL}">${APP_URL}</a>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ env.APP_URL }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - id: deployment
+        uses: actions/deploy-pages@v4

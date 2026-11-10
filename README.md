@@ -135,8 +135,8 @@ complete `arm-none-eabi` toolchain — [DaisyToolchain](https://github.com/elect
 `python3` with `pyserial`.
 
 ```bash
-git clone --recurse-submodules https://github.com/tone-3000/NAMPedal
-cd NAMPedal
+git clone --recurse-submodules https://github.com/tone-3000/t3k-diy-pedal
+cd t3k-diy-pedal
 make
 ```
 
