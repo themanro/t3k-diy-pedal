@@ -10,15 +10,18 @@ const KEY = 't3k_pedal_presets_v1';
 interface Stored {
   presets: Preset[];
   selected: number;
+  /** DI input the preset preview plays, by URL. */
+  previewInput: string | null;
 }
 
 const stripNam = (b: NamBlock | null): NamBlock | null => (b ? { ...b, namJson: null } : null);
 
-export function savePresets(presets: Preset[], selected: number): void {
+export function savePresets(presets: Preset[], selected: number, previewInput: string | null): void {
   try {
     const stored: Stored = {
       presets: presets.map((p) => ({ ...p, nam: stripNam(p.nam), nam2: stripNam(p.nam2) })),
       selected,
+      previewInput,
     };
     localStorage.setItem(KEY, JSON.stringify(stored));
   } catch {
@@ -39,7 +42,8 @@ export function loadPresets(): Stored | null {
       }
     });
     const selected = Number.isInteger(stored.selected) ? Math.min(Math.max(0, stored.selected!), NUM_PRESETS - 1) : 0;
-    return { presets, selected };
+    const previewInput = typeof stored.previewInput === 'string' ? stored.previewInput : null;
+    return { presets, selected, previewInput };
   } catch {
     return null;
   }

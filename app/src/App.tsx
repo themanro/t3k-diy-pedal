@@ -15,6 +15,7 @@ import { Header } from './components/Header';
 import { Splash } from './components/Splash';
 import { Chain } from './components/Chain';
 import { BlockDetail } from './components/BlockDetail';
+import { PresetPreview, previewKey, hasBlocks } from './components/PresetPreview';
 import { Pedal } from './components/Pedal';
 import { FlashDialog } from './components/FlashDialog';
 import { Spinner } from './components/Spinner';
@@ -62,6 +63,7 @@ export default function App() {
   const [entered, setEntered] = useState(false);
   const [presets, setPresets] = useState<Preset[]>(() => restored?.presets ?? emptyPresets());
   const [selected, setSelected] = useState(restored?.selected ?? 0);
+  const [previewInput, setPreviewInput] = useState<string | null>(restored?.previewInput ?? null);
   const [block, setBlock] = useState<BlockKind>('nam');
   const [loading, setLoading] = useState(false);
   // Number of .nam downloads in flight (restore and sync check several at once).
@@ -80,7 +82,7 @@ export default function App() {
     setPresets((prev) => prev.map((p, j) => (j === i ? fn(p) : p)));
 
   // Remember the session for next time.
-  useEffect(() => savePresets(presets, selected), [presets, selected]);
+  useEffect(() => savePresets(presets, selected, previewInput), [presets, selected, previewInput]);
 
   // Download and validate a .nam; store the parsed JSON on the block or report why not.
   const checkNam = async (i: number, kind: NamKind, model: Model) => {
@@ -274,6 +276,16 @@ export default function App() {
               onSwap={select}
               onRemove={remove}
             />
+            {hasBlocks(preset) && (
+              <PresetPreview
+                key={previewKey(preset, selected)}
+                index={selected}
+                preset={preset}
+                checking={checking}
+                input={previewInput}
+                onInput={setPreviewInput}
+              />
+            )}
             {detail && <BlockDetail kind={detailKind} block={detail} checking={checking} onModel={setModel} />}
           </section>
           <Pedal

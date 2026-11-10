@@ -308,15 +308,28 @@ h1, h2, h3, p { margin: 0; }
   min-width: 0;
 }
 .model-select-bar.off { opacity: var(--off); }
+/* The name is a native select dressed as a label: click it for the full list. */
 .model-select-name {
   flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   text-align: center;
+  text-align-last: center;
   font-size: 13px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
 }
+.model-select-name:disabled { cursor: default; opacity: 1; }
+.model-select-name option { background: var(--raised); font-weight: 400; }
 .model-select-count {
   display: inline-flex;
   align-items: center;
@@ -328,8 +341,50 @@ h1, h2, h3, p { margin: 0; }
 }
 .model-select-count svg { width: 14px; height: 14px; }
 
-/* WASM preview button lives inside this wrapper so its scoped styles apply */
-.neural-amp-modeler { display: flex; }
+/* Preset preview under the chain: [▶] Preview preset N ... Input [select].
+   One play button for the whole chain; the bar spans both tiles. */
+.preview {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px 10px 10px;
+  border-radius: 8px;
+  background: var(--raised);
+}
+.preview .neural-amp-modeler { display: flex; }
+.preview-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.preview-chain {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preview-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.preview-input select {
+  height: 32px;
+  max-width: 200px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  font-size: 13px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
 
 /* Pedal faceplate: flat face drawn in face millimetres, with rendered knob and bezel sprites
    on top (see components/Pedal.tsx) */

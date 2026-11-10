@@ -16,8 +16,10 @@ four presets over USB.
    block 1 is filtered to A2 NAM tones, block 2 to NAM and IR tones of every gear
    except spaces, and the tone's files decide which it becomes. NAM models are
    validated against the pedal's fixed A2-Lite architecture (1871 weights). Click a filled
-   block to step through the tone's models and preview them in the browser
-   (`neural-amp-modeler-wasm`), swap the tone, or remove it.
+   block to step through the tone's models, swap the tone, or remove it. The play button
+   under the chain previews the whole preset in the browser (`neural-amp-modeler-wasm`):
+   block 1 into block 2, on the same A2-Lite submodel the pedal runs, over a selectable DI
+   input.
 4. **Flash.** The app converts each `.nam` to `.namb`, packs a 4-entry bank (format
    v2) in rotary order (empty presets are zero-size entries), and writes it to QSPI
    at `0x90600000` over WebUSB (ST DfuSe). The pedal loads whichever preset the
@@ -62,8 +64,9 @@ npm run dev           # http://localhost:3001
 ## Code
 
 - `src/App.tsx`: auth, preset chains, tone loading and model validation, sync and restore.
-- `src/components/`: `Splash`, `Header`, `Chain` (NAM / NAM-or-IR tiles), `BlockDetail` (tone
-  details + model selector), `Pedal` (faceplate, knob, LEDs, flash and sync buttons), `FlashDialog`.
+- `src/components/`: `Splash`, `Header`, `Chain` (NAM / NAM-or-IR tiles), `PresetPreview` (whole-chain
+  play button + input select), `BlockDetail` (tone details + model selector), `Pedal` (faceplate, knob,
+  LEDs, flash and sync buttons), `FlashDialog`.
 - `src/assets/pedal/`: knob and bezel/LED sprites rendered from the enclosure model plus
   `face.json` (face geometry in mm). Regenerate with
   `blender -b -P hardware/renders/src/app_face.py` after changing the model.
@@ -83,5 +86,6 @@ Arial body, Roboto Mono labels. The faceplate is drawn flat from the drill templ
 geometry (black print, bare-aluminium LED track) with the knob and chrome bezels rendered
 from the 3D model. Logos are
 from the [TONE3000 API design requirements](https://www.tone3000.com/api#design-requirements).
-Icons are [Lucide](https://lucide.dev). COOP/COEP headers in `vite.config.ts` are
-required by the WASM preview player (SharedArrayBuffer).
+Icons are [Lucide](https://lucide.dev). The WASM player ships its own AudioWorklet and wasm
+and finds them via `import.meta.url`, so `vite.config.ts` excludes it from dependency
+pre-bundling (which would move the module and break those paths in dev).

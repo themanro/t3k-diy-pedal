@@ -1,12 +1,9 @@
-// Tone details and model selector for the active chain block.
-import { useCallback, useEffect, useRef } from 'react';
+// Tone details and model selector for the active chain block. Listening
+// happens one level up, in PresetPreview, which plays the whole chain.
 import { ChevronLeft, ChevronRight, Download, Bookmark, Folder } from 'lucide-react';
-import { T3kSlimPlayer, DEFAULT_IRS, DEFAULT_INPUTS } from 'neural-amp-modeler-wasm';
-import 'neural-amp-modeler-wasm/dist/styles.css';
 import type { Model } from '../types';
 import type { Block, BlockKind } from '../lib/flash';
 import { isNamKind } from '../lib/flash';
-import { t3kClient } from '../client';
 import { CrossOriginImage } from './CrossOriginImage';
 
 const GEAR: Record<string, string> = {
@@ -24,25 +21,8 @@ interface Props {
 
 export function BlockDetail({ kind, block, checking, onModel }: Props) {
   const { tone, models, model } = block;
-  const index = models.indexOf(model);
-  const blobUrl = useRef<string | null>(null);
-
-  useEffect(() => () => {
-    if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
-  }, []);
-
-  // The preview player needs a URL it can fetch without auth, so hand it a blob.
-  const getData = useCallback(async () => {
-    if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
-    const res = await t3kClient.fetchFile(model.model_url);
-    if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-    blobUrl.current = URL.createObjectURL(await res.blob());
-    return {
-      model: { name: model.name, url: blobUrl.current, default: true },
-      ir: DEFAULT_IRS[0],
-      input: DEFAULT_INPUTS[0],
-    };
-  }, [model]);
+  // By id: restored sessions hold separate copies of the same model.
+  const index = models.findIndex((m) => m.id === model.id);
 
   return (
     <div className="detail">
@@ -78,7 +58,20 @@ export function BlockDetail({ kind, block, checking, onModel }: Props) {
           <button className="btn-icon plain" disabled={checking || index <= 0} onClick={() => onModel(models[index - 1])} aria-label="Previous model">
             <ChevronLeft size={16} />
           </button>
-          <span className="model-select-name">{model.name}</span>
+          <select
+            className="model-select-name"
+            value={model.id}
+            disabled={checking}
+            onChange={(e) => {
+              const next = models.find((m) => m.id === Number(e.target.value));
+              if (next) onModel(next);
+            }}
+            aria-label="Model"
+          >
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
           <button className="btn-icon plain" disabled={checking || index >= models.length - 1} onClick={() => onModel(models[index + 1])} aria-label="Next model">
             <ChevronRight size={16} />
           </button>
@@ -86,11 +79,6 @@ export function BlockDetail({ kind, block, checking, onModel }: Props) {
             <Folder /> {index + 1}/{models.length}
           </span>
         </div>
-        {isNamKind(kind) && (
-          <div className="neural-amp-modeler">
-            <T3kSlimPlayer id={`model-${model.id}`} getData={getData} />
-          </div>
-        )}
       </div>
     </div>
   );
