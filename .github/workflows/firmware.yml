@@ -5,7 +5,7 @@ name: Firmware
 # release, which is what the build guide points users at.
 on:
   push:
-    branches: [main]
+    branches: [main, t3k-pedal]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
