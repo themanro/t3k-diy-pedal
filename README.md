@@ -161,6 +161,12 @@ the two above.
 
 The firmware is a `BOOT_QSPI` application, so the Daisy bootloader must be installed first.
 
+**Without building:** open the [companion app](https://www.tone3000.com/diy-pedal/app) in Chrome or Edge and use
+**Install firmware**. It writes the Daisy bootloader to a new Seed and then the latest release's `t3k_pedal.bin`,
+over USB, and updates a pedal that is already running. See [`app/README.md`](app/README.md#installing-firmware).
+
+**From source:**
+
 1. Put the Daisy into DFU mode (hold **BOOT**, tap **RESET**, release **BOOT**) and run `make program-boot`.
 2. Tap **RESET**. While the bootloader LED is breathing (tap **BOOT** once to make it wait indefinitely), run
    `make program-dfu`.

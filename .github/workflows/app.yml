@@ -8,6 +8,13 @@ name: App
 # site is not meant to be browsed directly: its root redirects to the live
 # page. Pull requests only build, to catch type and bundling errors.
 #
+# The build also ships the prebuilt firmware for the app's "Install firmware"
+# dialog: `npm run firmware` copies t3k_pedal.bin from the latest GitHub release
+# and the Daisy bootloader from the libDaisy submodule into the site (a browser
+# cannot fetch release assets itself, they are served without CORS headers).
+# The Firmware workflow dispatches this one after attaching a release binary,
+# so the app picks up each new release.
+#
 # Secret T3K_PUBLISHABLE_KEY in the "Pages" environment: a TONE3000 publishable
 # key (t3k_pub_..., Settings > API Keys) with https://www.tone3000.com/diy-pedal/app
 # registered as a redirect URI. Environment secrets are only visible to jobs
@@ -51,6 +58,16 @@ jobs:
           cache-dependency-path: app/package-lock.json
 
       - run: npm ci
+
+      # libDaisy only, for its bootloader binary (core/dsy_bootloader_*.bin).
+      - name: Check out libDaisy
+        working-directory: ${{ github.workspace }}
+        run: git submodule update --init --depth 1 libDaisy
+
+      - name: Stage release firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: npm run firmware
 
       - name: Build
         env:

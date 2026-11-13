@@ -253,7 +253,7 @@ h1, h2, h3, p { margin: 0; }
 .tile-add-1::before { right: 0; }
 .tile-add-2::before { left: 0; }
 .tile-add svg { position: relative; }
-.pedal-sync { margin-top: 8px; }
+.pedal-sync, .pedal-firmware { margin-top: 8px; }
 
 /* Block detail */
 .detail {

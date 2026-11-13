@@ -11,6 +11,8 @@ import { PEDAL_WEIGHT_COUNT } from './lib/namb';
 import { readBankDirectory } from './lib/serial';
 import { resolvePedalBank } from './lib/sync';
 import { loadPresets, savePresets } from './lib/store';
+import { loadFirmwareManifest } from './lib/firmware';
+import type { FirmwareManifest } from './lib/firmware';
 import { Header } from './components/Header';
 import { Splash } from './components/Splash';
 import { Chain } from './components/Chain';
@@ -18,6 +20,7 @@ import { BlockDetail } from './components/BlockDetail';
 import { PresetPreview, previewKey, hasBlocks } from './components/PresetPreview';
 import { Pedal } from './components/Pedal';
 import { FlashDialog } from './components/FlashDialog';
+import { FirmwareDialog } from './components/FirmwareDialog';
 import { Spinner } from './components/Spinner';
 
 // Popup side of the OAuth flow: relay the callback to the opener and close.
@@ -72,6 +75,9 @@ export default function App() {
   const [browsing, setBrowsing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [flashOpen, setFlashOpen] = useState(false);
+  // The prebuilt firmware this build ships (public/firmware/), if any.
+  const [firmware, setFirmware] = useState<FirmwareManifest | null>(null);
+  const [firmwareOpen, setFirmwareOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const popup = useRef<Window | null>(null);
@@ -147,6 +153,10 @@ export default function App() {
   useEffect(() => {
     if (!t3kClient.isConnected()) return;
     t3kClient.getUser().then(setUser).catch(() => t3kClient.clearTokens());
+  }, []);
+
+  useEffect(() => {
+    loadFirmwareManifest().then(setFirmware);
   }, []);
 
   // Once in, fetch the .nam files for the presets restored from localStorage.
@@ -292,17 +302,20 @@ export default function App() {
             presets={presets}
             selected={selected}
             syncing={syncing}
+            firmwareVersion={firmware?.version ?? null}
             onSelect={(i) => {
               setSelected(i);
               setBlock('nam');
             }}
             onFlash={() => setFlashOpen(true)}
             onSync={syncFromPedal}
+            onFirmware={() => setFirmwareOpen(true)}
           />
         </main>
       )}
 
       {flashOpen && <FlashDialog presets={presets} onClose={() => setFlashOpen(false)} />}
+      {firmwareOpen && firmware && <FirmwareDialog manifest={firmware} onClose={() => setFirmwareOpen(false)} />}
     </>
   );
 }

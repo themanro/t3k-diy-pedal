@@ -2,7 +2,8 @@
 
 Companion web app for the TONE3000 × Daisy DIY Pedal (T3K Pedal). It loads NAM
 captures and cab IRs from [TONE3000](https://www.tone3000.com) onto the pedal's
-four presets over USB.
+four presets over USB. It also installs the prebuilt firmware, so building a pedal
+needs no toolchain.
 
 ## Flow
 
@@ -38,8 +39,8 @@ to update.
 ## Requirements
 
 - Chrome or Edge (WebUSB and Web Serial).
-- Pedal running the T3K Pedal firmware with the Daisy bootloader
-  (`make program-boot`, `make program-dfu`).
+- Pedal running the T3K Pedal firmware with the Daisy bootloader: **Install firmware**
+  in the app (below), or `make program-boot`, `make program-dfu` from source.
 - A TONE3000 publishable key (`t3k_pub_...`) from Settings > API Keys with
   `http://localhost:3001` as a registered redirect URI.
 
@@ -49,8 +50,15 @@ to update.
 cd app
 cp env.example .env   # fill in VITE_PUBLISHABLE_KEY
 npm install
+npm run firmware      # optional: stage the release firmware for "Install firmware"
 npm run dev           # http://localhost:3001
 ```
+
+`npm run firmware` (`scripts/fetch-firmware.mjs`) downloads `t3k_pedal.bin` from the
+latest GitHub release (`FIRMWARE_TAG=v1.2.0` for another one), copies the Daisy
+bootloader from the `libDaisy` submodule, and writes both with a `firmware.json`
+manifest (version, sizes, SHA-256) to `public/firmware/`, which is not committed.
+Without it the app runs but has no **Install firmware** button.
 
 ## Deploying
 
@@ -67,6 +75,12 @@ secret in the repo's "Pages" environment; that key must have
 `https://www.tone3000.com/diy-pedal/app` registered as a redirect URI. One-time setup:
 repo Settings > Pages > Source: GitHub Actions.
 
+The workflow runs `npm run firmware` before the build, so every deploy ships the latest
+release's firmware under `firmware/` on the app's own origin (GitHub serves release
+assets without CORS headers, so the browser cannot fetch them from the release). When
+`.github/workflows/firmware.yml` attaches the binary to a new `v*` release it dispatches
+this workflow, and the app offers the new version a few minutes later.
+
 ## Flashing
 
 1. **Flash to pedal** builds the bank image.
@@ -76,12 +90,35 @@ repo Settings > Pages > Source: GitHub Actions.
 3. **Connect and flash:** pick the `DFU in FS Mode` device. The app erases and writes
    the bank region, then reboots the pedal.
 
+## Installing firmware
+
+**Install firmware** in the Pedal panel writes the release build the app ships (the
+button carries its version) over the same WebUSB DfuSe driver. Presets live in their
+own flash region and are kept.
+
+1. **DFU mode.** A new Daisy Seed: hold BOOT, tap RESET, release BOOT. A pedal already
+   running the firmware: **Send DFU trigger**, as for presets.
+2. **Connect and install:** pick the device in the browser prompt. What gets written
+   depends on which bootloader answers; both enumerate as `0483:df11` and are told apart
+   by the memory layout they report:
+   - the STM32's built-in bootloader (a new Seed, listed as `DFU in FS Mode`) exposes
+     internal flash, and gets the Daisy bootloader at `0x08000000` (what
+     `make program-boot` does). The Seed restarts into it, LED breathing, and the dialog
+     asks you to connect once more;
+   - the Daisy bootloader (listed as `Daisy Bootloader`) exposes QSPI, and gets the
+     firmware at `0x90040000` (what `make program-dfu` does). The pedal then reboots
+     into it.
+
+Both images are checked against the manifest's SHA-256 before anything is written. The
+app cannot read the version a pedal is running (the firmware has no command for it), so
+it offers the install rather than an "update available" prompt.
+
 ## Code
 
 - `src/App.tsx`: auth, preset chains, tone loading and model validation, sync and restore.
 - `src/components/`: `Splash`, `Header`, `Chain` (NAM / NAM-or-IR tiles), `PresetPreview` (whole-chain
   play button + input select), `BlockDetail` (tone details + model selector), `Pedal` (faceplate, knob,
-  LEDs, flash and sync buttons), `FlashDialog`.
+  LEDs, flash, sync and firmware buttons), `FlashDialog`, `FirmwareDialog`.
 - `src/assets/pedal/`: knob and bezel/LED sprites rendered from the enclosure model plus
   `face.json` (face geometry in mm). Regenerate with
   `blender -b -P hardware/renders/src/app_face.py` after changing the model.
@@ -89,6 +126,8 @@ repo Settings > Pages > Source: GitHub Actions.
 - `src/lib/namb.ts`: port of nam-binary-loader `nam2namb`.
 - `src/lib/bank.ts`: port of `pack_models.py` (bank layout, IR pipeline).
 - `src/lib/webdfu.ts`: WebUSB port of `pydfu.py`.
+- `src/lib/firmware.ts`: firmware manifest, image download and checksum, bootloader detection and install.
+- `scripts/fetch-firmware.mjs`: stages the release firmware and the Daisy bootloader in `public/firmware/`.
 - `src/lib/serial.ts`: Web Serial DFU trigger and bank directory reader.
 - `src/lib/sync.ts`: pedal bank directory → presets (TONE3000 id resolution).
 - `src/lib/store.ts`: `localStorage` persistence of the presets.

@@ -222,10 +222,13 @@ export class DfuDevice {
     progress?.(total, total, 'write');
   }
 
-  /** Exit DFU and run the application (mirrors pydfu.py exit_dfu()). */
-  async leave(): Promise<void> {
+  /**
+   * Exit DFU and run the application (mirrors pydfu.py exit_dfu()). `addr` is
+   * the address pointer left set for the device, as in dfu-util's `-s addr:leave`.
+   */
+  async leave(addr = 0x08000000): Promise<void> {
     try {
-      await this.setAddress(0x08000000);
+      await this.setAddress(addr);
       // Zero-length DNLOAD triggers manifest → device reboots into the app.
       await this.controlOut(DFU_DNLOAD, 0);
       await this.getStatus().catch(() => undefined); // device may drop off the bus here

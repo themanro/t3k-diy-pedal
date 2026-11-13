@@ -4,7 +4,7 @@
 // are sprites rendered from the enclosure model by hardware/renders/src/app_face.py; face.json carries the
 // geometry in face millimetres, which is also the SVG unit here.
 import { useEffect, useRef, useState } from 'react';
-import { Download, Zap } from 'lucide-react';
+import { Cpu, Download, Zap } from 'lucide-react';
 import type { Preset } from '../lib/flash';
 import { isReady } from '../lib/flash';
 import { isWebSerialSupported } from '../lib/serial';
@@ -137,12 +137,15 @@ interface Props {
   presets: Preset[];
   selected: number;
   syncing: boolean;
+  /** Release tag of the firmware this build can install, or null when it ships none. */
+  firmwareVersion: string | null;
   onSelect: (i: number) => void;
   onFlash: () => void;
   onSync: () => void;
+  onFirmware: () => void;
 }
 
-export function Pedal({ presets, selected, syncing, onSelect, onFlash, onSync }: Props) {
+export function Pedal({ presets, selected, syncing, firmwareVersion, onSelect, onFlash, onSync, onFirmware }: Props) {
   const count = presets.filter(isReady).length;
   const canSync = isWebSerialSupported();
 
@@ -166,6 +169,17 @@ export function Pedal({ presets, selected, syncing, onSelect, onFlash, onSync }:
         {syncing ? <Spinner /> : <Download size={14} />}
         {syncing ? 'Reading pedal' : 'Sync from pedal'}
       </button>
+      {firmwareVersion && (
+        <button
+          className="btn btn-block pedal-firmware"
+          disabled={syncing}
+          onClick={onFirmware}
+          title="Install the prebuilt firmware on a new pedal, or update it"
+        >
+          <Cpu size={14} />
+          Install firmware {firmwareVersion}
+        </button>
+      )}
     </aside>
   );
 }
