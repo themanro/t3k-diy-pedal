@@ -30,7 +30,9 @@ hardware/
 │   └── cad/enclosure.py         parametric CadQuery model of the enclosure and all hardware (exports GLB)
 ├── 3d/
 │   ├── t3k-pedal.glb            finished pedal (enclosure, hardware, knobs, board inside)
-│   └── t3k-pedal-pcb.glb        populated PCB with the Daisy Seed3
+│   ├── t3k-pedal-pcb.glb        populated PCB with the Daisy Seed3
+│   ├── t3k-pedal.blend          Blender scene of the finished pedal
+│   └── t3k-pedal-pcb.blend      Blender scene of the populated PCB on its own, no enclosure
 └── renders/
     ├── pedal-*.jpg, build-*.jpg, pcb-stage-*.jpg
     ├── build-animation-1080p.mp4 / -720p.mp4 / -poster.jpg
@@ -102,6 +104,14 @@ part of the kit; to make your own:
 kicad-cli pcb export glb --subst-models --include-tracks --include-pads --include-silkscreen --include-soldermask \
   -o hardware/3d/board-full.glb hardware/pcb/nam-pedal-diy.kicad_pcb
 ```
+
+`3d/t3k-pedal.blend` and `3d/t3k-pedal-pcb.blend` are the same two subjects as ready-to-render Blender scenes (saved
+from Blender 5.2, units in mm), built from the full-resolution models with the render materials, the studio lights, a
+camera and a shadow-catcher floor. Both are self-contained: nothing is linked to files outside the `.blend`.
+
+- `t3k-pedal.blend` is the closed pedal with the board inside, as in `renders/pedal-iso.jpg`.
+- `t3k-pedal-pcb.blend` is the populated board only, without the enclosure, its hardware or the off-board wiring. The
+  board is Daisy side up and centred on the origin, with all of its parts under the `PCB` empty.
 
 ## Renders
 
