@@ -32,7 +32,8 @@ hardware/
 │   ├── t3k-pedal.glb            finished pedal (enclosure, hardware, knobs, board inside)
 │   ├── t3k-pedal-pcb.glb        populated PCB with the Daisy Seed3
 │   ├── t3k-pedal.blend          Blender scene of the finished pedal
-│   └── t3k-pedal-pcb.blend      Blender scene of the populated PCB on its own, no enclosure
+│   ├── t3k-pedal-pcb.blend      Blender scene of the populated PCB on its own, no enclosure
+│   └── t3k-pedal-parts.blend    Blender scene with one of each part laid out separately and labelled
 └── renders/
     ├── pedal-*.jpg, build-*.jpg, pcb-stage-*.jpg
     ├── build-animation-1080p.mp4 / -720p.mp4 / -poster.jpg
@@ -112,6 +113,19 @@ camera and a shadow-catcher floor. Both are self-contained: nothing is linked to
 - `t3k-pedal.blend` is the closed pedal with the board inside, as in `renders/pedal-iso.jpg`.
 - `t3k-pedal-pcb.blend` is the populated board only, without the enclosure, its hardware or the off-board wiring. The
   board is Daisy side up and centred on the origin, with all of its parts under the `PCB` empty.
+
+`3d/t3k-pedal-parts.blend` is a parts catalogue built the same way: one of each part, taken out of the assembly and
+laid out side by side on a dark table. It has the enclosure, back plate, bare circuit board, Daisy Seed3, pin header,
+potentiometer, knob, rotary switch, rotary knob, footswitch, 1/4" jack, DC jack, LED bezel, LED, resistor, diode, the
+four capacitor types, op-amp, voltage regulator and trim pot. The off-board wires are left out, and the IC socket,
+USB-C extension and knob adapter sleeve have no 3D model, so they are not in the file either.
+
+- Each part has its own collection under `Parts`, named after the part, and all of its meshes sit under one empty with
+  the same name. Move, hide or append a part by that empty or collection.
+- The empty carries the BOM details as custom properties (`reference`, `value`, `qty`, `description`) and shows its
+  name in the viewport.
+- The `Labels` collection holds a text object in front of each part with its name, reference designators, value and
+  quantity. The labels show up in renders; hide the collection to render without them.
 
 ## Renders
 
