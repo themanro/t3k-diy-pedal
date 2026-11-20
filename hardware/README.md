@@ -22,11 +22,13 @@ hardware/
 │   ├── schematic.pdf
 │   └── images/           schematic.svg, pcb-front / pcb-back (SVG + PNG), 3D views
 ├── enclosure/            1590XX enclosure: drilling + UV print
-│   ├── t3k-pedal-face.ai        master artwork (Illustrator): layer "MC0" print, layer "MC1" drill
+│   ├── t3k-pedal-face.ai        master artwork (Illustrator): layer "MC0" print, layer "MC1" hole positions
 │   ├── face-artwork.pdf/.png    top face print, 141 x 117 mm (1:1)
 │   ├── face-drill.pdf/.png      top face drill template, 141 x 117 mm (1:1)
-│   ├── side-wordmark.pdf/.png   TONE3000 wordmark for the jack-side wall, 135 x 32 mm
+│   ├── side-drill.pdf/.png      jack-end wall drill template, 135 x 32 mm (1:1)
+│   ├── side-wordmark.pdf/.png   TONE3000 wordmark for the front wall (opposite the jacks), 135 x 32 mm
 │   ├── tayda-drill-1590XX.txt   Tayda custom drill service file (face + jack-end holes)
+│   ├── make_drill_templates.py  draws face-drill and side-drill from tayda-drill-1590XX.txt
 │   └── cad/enclosure.py         parametric CadQuery model of the enclosure and all hardware (exports GLB)
 ├── 3d/
 │   ├── t3k-pedal.glb            finished pedal (enclosure, hardware, knobs, board inside)
@@ -82,15 +84,19 @@ Fourteen wires connect the board to the enclosure-mounted parts. Pads are labell
 Hammond 1590XX-size diecast aluminum box, drilled and UV printed. Tayda sells the pre-drilled, printed enclosure as
 part of the kit; to make your own:
 
-- **Drilling.** `enclosure/face-drill.pdf` is a 1:1 template for the top face (print at 100 %, no scaling).
-  `enclosure/tayda-drill-1590XX.txt` is the file that was submitted to Tayda's custom drill service and is the
-  authoritative hole list: one line per hole, `face  diameter  x  y` in mm measured from the centre of that face
-  (`A` = top face, `E` = jack-end wall). Top face: 6 × 7.4 mm (pots), 12.4 mm (footswitch), 6.5 mm (rotary bushing;
+- **Drilling.** `enclosure/tayda-drill-1590XX.txt` is the file that was submitted to Tayda's custom drill service and
+  is the authoritative hole list: one line per hole, `face  diameter  x  y` in mm measured from the centre of that face
+  (`A` = top face, `E` = jack-end wall). Top face: 6 × 7.4 mm (pots), 12.4 mm (footswitch), 9.7 mm (rotary bushing;
   the 6→6.3 mm adapter sleeve in the BOM goes under the knob), 4 × 6.1 mm (LED bezels), 3.6 mm (power LED). End
-  wall: 2 × 9.9 mm (1/4" jacks) and 10.9 mm (DC jack).
-- **Printing.** `enclosure/face-artwork.pdf` (top) and `enclosure/side-wordmark.pdf` (jack-side wall) are the UV
-  print files at 1:1. The master is `enclosure/t3k-pedal-face.ai`; the print and drill layers are separate layers in
-  that file.
+  wall: 2 × 9.9 mm (1/4" jacks) and 12.8 mm (DC jack).
+  `enclosure/face-drill.pdf` (top face) and `enclosure/side-drill.pdf` (jack-end wall) are 1:1 templates drawn from
+  that list (print at 100 %, no scaling). Each hole is drawn at its true diameter with a centre cross, and the tick
+  marks on the edges are for centring the template on the enclosure. After changing the list, redraw them with
+  `python enclosure/make_drill_templates.py` (needs `pillow`).
+- **Printing.** `enclosure/face-artwork.pdf` (top) and `enclosure/side-wordmark.pdf` (front wall, opposite the
+  jacks) are the UV print files at 1:1. The master is `enclosure/t3k-pedal-face.ai`; the print layer and a
+  hole-position layer are separate layers in that file. The hole-position layer shows where the top-face holes go,
+  not their diameters.
 - **CAD.** `enclosure/cad/enclosure.py` is a parametric [CadQuery](https://cadquery.readthedocs.io) model of the
   enclosure with every piece of hardware (pots, rotary switch, footswitch, jacks, bezels, knobs, back plate).
   `python enclosure.py enclosure.glb` exports the GLB used by the renders and writes `enclosure.json` with the derived
