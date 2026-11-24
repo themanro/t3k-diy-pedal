@@ -17,8 +17,8 @@ R8,1,100k,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,,https:/
 R64,1,10K,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,,https://www.taydaelectronics.com/10-x-resistor-10k-ohm-1-4w-1-metal-film-pkg-of-10.html,,	$0.015 (pack of 10)
 "RV1,RV2,RV3,RV4,RV5,RV6",6,B10k,Pedal:POT_16MM,,https://www.taydaelectronics.com/b10k-ohm-linear-taper-potentiometer-round-shaft-pc-mount-l.html,,$0.59
 SW1,1,SW_Rotary_1x4_MP,,https://www.taydaelectronics.com/datasheets/files/SP23080077_SPEC_SR2511F-0403-17K0A-C9-S-3.pdf,https://www.taydaelectronics.com/rotary-switch-3-pole-4-position-alpha-sr2511-2684.html,,$1.09
-U1,1,TL072,PDIP8,http://www.ti.com/lit/ds/symlink/tl071.pdf,https://www.taydaelectronics.com/l78l05acz-l78l05-78l05-5-volts-100ma-voltage-regulator-ic.html,,$1.49
-U2,1,LM78L05_TO92,Package_TO_SOT_THT:TO-92_Inline,https://www.onsemi.com/pub/Collateral/MC78L06A-D.pdf,,,$0.15
+U1,1,TL072,PDIP8,https://www.ti.com/lit/ds/symlink/tl072.pdf,https://www.taydaelectronics.com/tl072-low-noise-j-fet-dual-op-amp-ic.html,,$1.49
+U2,1,LM78L05_TO92,Package_TO_SOT_THT:TO-92_Inline,https://www.onsemi.com/pub/Collateral/MC78L06A-D.pdf,https://www.taydaelectronics.com/l78l05acz-l78l05-78l05-5-volts-100ma-voltage-regulator-ic.html,,$0.15
 ,4,3mm LED Bezel,,,https://www.taydaelectronics.com/3mm-bezel-led-holder-chrome-metal.html,,$0.08
 ,1,USB-C Extension,,,https://www.adafruit.com/product/6069,,$4.50
 FTSW,1,Footswitch,,,https://www.taydaelectronics.com/3pdt-stomp-foot-pedal-switch-momentary.html,,$2.99
