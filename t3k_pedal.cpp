@@ -19,8 +19,10 @@
 //     -> [input calibration]  NAM 1  [calibrated hand-off | loudness normalize]
 //     -> ( [input calibration]  NAM 2  [loudness normalize]
 //        | cab IR, normalized to unity in-band gain )
-//     -> 3-band EQ -> OUTPUT knob
+//     -> 3-band EQ -> Arrakis -> OUTPUT knob
 //
+//   Arrakis             a detuned sub-octave drone after the amp (arrakis.h);
+//                       Mix 0, the default, leaves the chain as it was.
 //   input calibration   gain = kInputLevelDbu - capture input_level_dbu, so
 //                       a capture with calibration data is hit at the level
 //                       its creator used. Captures without it pass at unity.
@@ -33,16 +35,21 @@
 //
 // T3K Pedal controls:
 //   INPUT_GAIN, OUTPUT_VOLUME, BASS, MID, TREBLE, NOISE_GATE_THRESHOLD knobs
-//   FOOTSWITCH = bypass toggle
+//   FOOTSWITCH = tap: bypass toggle; hold (kHoldMs): Arrakis knob page on/off.
+//     On the Arrakis page BASS sets its Detune and MID its Mix; INPUT, OUTPUT,
+//     TREBLE and GATE work as usual. Each page's values stay where they were
+//     until its knob reaches them again (pickup), so nothing jumps.
 //   Noise gate is always active; its threshold is set entirely by the
 //   NOISE_GATE_THRESHOLD knob (fully CCW = off).
 //   ROTARY_1..4 = preset select (rotary switch, one position grounded at a time)
-//   LED_STATUS = lit when active, off when bypassed, blinks while clipping
+//   LED_STATUS = lit when active, off when bypassed, blinks while clipping,
+//     blinks slowly on the Arrakis page
 //   LED_PRESET_1..4 = lit for the currently selected preset
 
 #include "daisy_seed.h"
 #include "t3k_pedal.h"
 #include "eq3band.h"
+#include "arrakis.h"
 #include <cmath>
 #include <cstring>
 
@@ -177,6 +184,32 @@ static void OnUsbReceive(uint8_t* buf, uint32_t* len)
 static volatile float gain          = 1.0f;
 static volatile float volume        = 1.0f;
 static volatile bool  effect_active = true;
+
+// Arrakis after the amp chain (arrakis.h): a 32 KB ring in AXI SRAM, cheap per
+// sample. Its two controls live on the footswitch-hold knob page.
+static Arrakis arrakis;
+
+// The footswitch held this long switches the BASS and MID knobs between the
+// EQ and Arrakis's Detune and Mix; a shorter tap still toggles bypass.
+static constexpr float kHoldMs = 600.0f;
+
+// Knob pickup: after a page change a value stays where it was until its knob
+// comes within kPickup of it, then follows the knob (no jumps).
+struct Pickup
+{
+    static constexpr float kPickup = 0.02f;
+    float value;
+    bool  caught;
+    void  Arm() { caught = false; }
+    float Follow(float knob)
+    {
+        if(!caught && fabsf(knob - value) <= kPickup)
+            caught = true;
+        if(caught)
+            value = knob;
+        return value;
+    }
+};
 
 // A2-Lite engine memory for the two NAM blocks, placed as the engine's README
 // recommends: captures and instances (head buffer, scratch, layer
@@ -828,6 +861,9 @@ static inline const float* ProcessChain(size_t num_frames)
     // Tone stack on the finished chain.
     for(size_t i = 0; i < num_frames; i++)
         out[i] = eq.Process(out[i]);
+
+    // Arrakis after the amp; at Mix 0 it passes the block unchanged.
+    arrakis.Process(out, num_frames);
     return out;
 }
 
@@ -955,6 +991,7 @@ int main(void)
         (unsigned long)kMaxIrLen);
     eq.Init(hw.AudioSampleRate());
     gate.Init(hw.AudioSampleRate());
+    arrakis.Init(hw.AudioSampleRate());
 
     AdcChannelConfig adc_cfg[6];
     for(size_t i = 0; i < 6; i++)
@@ -1049,6 +1086,18 @@ int main(void)
     led_status.Write(true); // start active
 
     float last_bass = 999.0f, last_mid = 999.0f, last_treble = 999.0f;
+    // BASS and MID: the EQ follows them from boot; Arrakis's values (Detune at
+    // its Zoom default, Mix 0 = off) wait for the knobs on its page.
+    bool   arrakis_page = false, hold_used = false;
+    Pickup bass_knob{hw.adc.GetFloat(T3kPedal::BASS), true};
+    Pickup mid_knob{hw.adc.GetFloat(T3kPedal::MID), true};
+    Pickup detune_knob{0.63f, false};
+    Pickup mix_knob{0.0f, false};
+    arrakis.SetDetune(detune_knob.value);
+    arrakis.SetMix(mix_knob.value);
+    static constexpr uint32_t kPageBlinkHalfMs = 400;
+    uint32_t next_page_toggle = 0;
+    bool     page_blink_on    = false;
     float last_ng = -1.0f; // tracks NOISE_GATE_THRESHOLD knob while gate is on
 #ifdef LOGGING
     uint32_t last_print = System::GetNow();
@@ -1112,8 +1161,20 @@ int main(void)
         }
 
         // Ranges match the NAM plugin ToneStack: bass ±20 dB, mid ±15 dB, treble ±10 dB.
-        float bass   = (hw.adc.GetFloat(T3kPedal::BASS) - 0.5f) * 40.0f;
-        float mid    = (hw.adc.GetFloat(T3kPedal::MID) - 0.5f) * 30.0f;
+        const float bass_pos = hw.adc.GetFloat(T3kPedal::BASS);
+        const float mid_pos  = hw.adc.GetFloat(T3kPedal::MID);
+        if(arrakis_page)
+        {
+            arrakis.SetDetune(detune_knob.Follow(bass_pos));
+            arrakis.SetMix(mix_knob.Follow(mid_pos));
+        }
+        else
+        {
+            bass_knob.Follow(bass_pos);
+            mid_knob.Follow(mid_pos);
+        }
+        float bass   = (bass_knob.value - 0.5f) * 40.0f;
+        float mid    = (mid_knob.value - 0.5f) * 30.0f;
         float treble = (hw.adc.GetFloat(T3kPedal::TREBLE) - 0.5f) * 20.0f;
         if(bass != last_bass)
         {
@@ -1131,8 +1192,30 @@ int main(void)
             last_treble = treble;
         }
 
+        // Hold: switch knob pages once per press. Tap (released before the
+        // hold time): toggle bypass, as before.
+        if(footswitch.Pressed() && !hold_used && footswitch.TimeHeldMs() >= kHoldMs)
+        {
+            hold_used    = true;
+            arrakis_page = !arrakis_page;
+            if(arrakis_page)
+            {
+                detune_knob.Arm();
+                mix_knob.Arm();
+            }
+            else
+            {
+                bass_knob.Arm();
+                mid_knob.Arm();
+            }
+            LOG("Knob page: %s", arrakis_page ? "Arrakis" : "EQ");
+        }
         if(footswitch.FallingEdge())
-            ToggleBypass();
+        {
+            if(!hold_used)
+                ToggleBypass();
+            hold_used = false;
+        }
 
         // Rotary preset select: switch only on an unambiguous single-position
         // reading that differs from the current preset, and only if that
@@ -1157,6 +1240,16 @@ int main(void)
                 status_blink_on   = !status_blink_on;
                 next_blink_toggle = now;
                 led_status.Write(status_blink_on);
+            }
+        }
+        else if(arrakis_page)
+        {
+            // Slow blink: BASS and MID are Arrakis's Detune and Mix.
+            if(now - next_page_toggle >= kPageBlinkHalfMs)
+            {
+                page_blink_on    = !page_blink_on;
+                next_page_toggle = now;
+                led_status.Write(page_blink_on);
             }
         }
         else
@@ -1220,6 +1313,12 @@ int main(void)
                 bass,
                 mid,
                 treble);
+            LOG("  arrakis page=%d detune=%.2f%s mix=%.2f%s",
+                arrakis_page ? 1 : 0,
+                detune_knob.value,
+                detune_knob.caught ? "" : " (waiting)",
+                mix_knob.value,
+                mix_knob.caught ? "" : " (waiting)");
             last_print = now;
         }
 #endif

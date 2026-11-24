@@ -72,8 +72,8 @@ Off-board wiring is fourteen wires (jacks, DC, footswitch, rotary); pads are lab
 
 | Control | Function |
 | --- | --- |
-| Footswitch | Toggles the effect. Bypass is a clean digital pass-through. |
-| PWR LED | On when active, off when bypassed. Flashes when the input or output clips (≥ 0.98 full scale). |
+| Footswitch | Tap: toggles the effect. Bypass is a clean digital pass-through. Hold (0.6 s): switches LOW and MID to Arrakis and back (see [Arrakis](#arrakis)). |
+| PWR LED | On when active, off when bypassed. Flashes when the input or output clips (≥ 0.98 full scale). Blinks slowly while LOW and MID control Arrakis. |
 | INPUT | Level into the model, 0 to 2× (fully up is +6 dB). Noon is unity. |
 | GATE | Noise gate threshold, −80 to −30 dBFS. Fully counter-clockwise disables the gate. |
 | OUTPUT | Output level, 0 to 1×. |
@@ -81,6 +81,22 @@ Off-board wiring is fourteen wires (jacks, DC, footswitch, rotary); pads are lab
 | Rotary selector | Selects preset 1 to 4. The LED at the selected position lights. |
 | Input trimmer (RV7, internal) | Analog attenuator ahead of the converter. Fully up is unity (the calibrated position, see below); back it off for hot pickups or a boost in front. |
 | USB-C | Companion app connection for presets and firmware. |
+
+### Arrakis
+
+This fork adds **Arrakis** after the amp chain (after the EQ, before OUTPUT): a detuned sub-octave drone, ported from
+the MS-70CDR effect in [ZoomMultistompZDL](https://github.com/themanro/ZoomMultistompZDL). Two voices read the signal
+one octave down, drifting apart in pitch with a slow LFO so they beat against each other, then through a soft
+clipper and a dark low-pass. It is in [`arrakis.h`](arrakis.h).
+
+Hold the footswitch for 0.6 s and the PWR LED blinks slowly: **LOW** is now Arrakis's **Detune** (how far the two
+voices drift apart, up to ±60 cents) and **MID** its **Mix** (dry to wet). Hold it again to return to the EQ. A value
+stays where it was until its knob is turned past it, so switching pages never jumps the EQ or Arrakis. Mix starts at
+0, which leaves the pedal exactly as before; it isn't saved across a power cycle yet.
+
+To hear it without a pedal, `make -C host && host/render embedded/weights/a2lite.namb out/` runs a capture through
+the same A2-Lite engine and Arrakis on a computer and writes WAVs (a synthesized guitar DI, or your own mono float32
+48 kHz file as a third argument).
 
 ## Gain staging
 
