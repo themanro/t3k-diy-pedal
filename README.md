@@ -1,19 +1,27 @@
-# T3K Pedal — firmware for the TONE3000 × Daisy DIY Pedal
+# TONE3000 × Daisy DIY Pedal
 
 The TONE3000 × Daisy DIY Pedal (the "T3K Pedal") is an open source guitar and bass pedal that runs
-[Neural Amp Modeler](https://www.neuralampmodeler.com) A2 captures on an
-[Electrosmith Daisy Seed3](https://daisy.audio/products/seed3). This repository holds everything in the kit:
-the firmware, the companion web app that loads presets from [TONE3000](https://www.tone3000.com), and the
+[Neural Amp Modeler A2](https://www.tone3000.com/blog/introducing-neural-amp-modeler-nam-architecture-2-a2)
+captures on an [Electrosmith Daisy Seed3](https://daisy.audio/TONE3000). This repository holds everything in the
+kit: the firmware, the companion web app that loads presets from [TONE3000](https://www.tone3000.com), and the
 hardware (schematic, PCB, enclosure, BOM, 3D models). The step-by-step
 [build guide](https://www.tone3000.com/guides/diy-pedal) walks through parts, soldering, enclosure, flashing and
 loading presets.
 
 ![TONE3000 DIY Pedal and PCB (render)](docs/images/hero.jpg)
 
+- **Release video** with Death By Audio: [watch on YouTube](https://www.youtube.com/watch?v=Rrxt4IpQ4Ic)
+- **Announcement:** [Introducing the TONE3000 × Daisy DIY Pedal Kit](https://www.tone3000.com/blog/tone3000-daisy-diy-pedal-kit)
+- **Build guide:** [tone3000.com/guides/diy-pedal](https://www.tone3000.com/guides/diy-pedal)
+- **Companion app:** [tone3000.com/diy-pedal/app](https://www.tone3000.com/diy-pedal/app)
+- **Daisy Seed3:** [daisy.audio/TONE3000](https://daisy.audio/TONE3000)
+- **Parts kit:** [Tayda Electronics](https://www.taydaelectronics.com/tone3000-diy-guitar-pedal-kit.html)
+
 Each of the four presets on the rotary selector is a one- or two-block chain:
 
-- **Block 1** — a NAM **A2-Lite** capture
-- **Block 2** — another A2-Lite capture (a drive pedal into an amp, a preamp into a power amp) **or** a cabinet IR
+- **Block 1** — a NAM [**A2-Lite**](https://www.tone3000.com/guides/nam-a2-the-complete-guide) capture
+- **Block 2** — another A2-Lite capture (a drive pedal into an amp, a preamp into a power amp) **or** a
+  [cabinet IR](https://www.tone3000.com/guides/impulse-responses)
 
 Signal chain: input → noise gate → INPUT level → [input calibration] NAM [hand-off | loudness normalize]
 → ([input calibration] NAM 2 [loudness normalize] | cab IR, unity in-band) → 3-band EQ → OUTPUT level.
@@ -33,7 +41,7 @@ NeuralAmpModelerCore's at float32 rounding level (max abs error 2.4e-7, ESR −1
 | `libDaisy/` | Electrosmith libDaisy (submodule, pinned to a release) |
 | `embedded/` | A2-Lite engine and `.namb` reader (submodule) |
 | `daisyConvol/` | VZtec's partitioned convolver for cab IRs (submodule, pinned to v0.1.0) |
-| `app/` | Companion web app: TONE3000 login, preset builder, WebUSB flashing — see [`app/README.md`](app/README.md) |
+| `app/` | Companion web app, built on the [TONE3000 API](https://www.tone3000.com/api): TONE3000 login, preset builder, WebUSB flashing — see [`app/README.md`](app/README.md) |
 | `pack_models.py`, `convert_ir.py`, `pydfu.py` | Command-line preset bank builder and flasher |
 | `hardware/` | KiCad project, Gerbers, BOM, enclosure drill/print files, 3D models, renders — see [`hardware/README.md`](hardware/README.md) |
 | `docs/images/` | Images used in this README |
@@ -43,6 +51,12 @@ NeuralAmpModelerCore's at float32 rounding level (max abs error 2.4e-7, ESR −1
 The `hardware/` directory has everything to build the pedal: the KiCad project and Gerbers, the bill of materials
 with Tayda and Electrosmith links, the 1590XX enclosure drill template and faceplate artwork, 3D models of the pedal
 and board, and the renders used in the build guide.
+
+The parts come in two orders: the
+[kit from Tayda Electronics](https://www.taydaelectronics.com/tone3000-diy-guitar-pedal-kit.html) (the PCB, the
+drilled and printed enclosure, and every component) and a [Daisy Seed3](https://daisy.audio/TONE3000) from Daisy
+Audio. To source parts yourself, the build guide's
+[bill of materials](https://www.tone3000.com/guides/diy-pedal#bill-of-materials) links each one.
 
 | | |
 | --- | --- |
@@ -127,10 +141,11 @@ tables live in DTCM, its stage-1 spectra and delay line (60 KB) in AXI SRAM.
 
 ## Building the firmware
 
-Prebuilt `t3k_pedal.bin` releases are the normal route (see the build guide); the
+Prebuilt `t3k_pedal.bin` releases are the normal route (see
+[Flash the Firmware](https://www.tone3000.com/guides/diy-pedal#install-the-firmware) in the build guide); the
 [Firmware workflow](.github/workflows/firmware.yml) builds every push and attaches the binary to each `v*` tag's
-GitHub release. To build from source you need a
-complete `arm-none-eabi` toolchain — [DaisyToolchain](https://github.com/electro-smith/DaisyToolchain) or the
+[GitHub release](https://github.com/tone-3000/t3k-diy-pedal/releases). To build from source you need a complete
+`arm-none-eabi` toolchain — [DaisyToolchain](https://github.com/electro-smith/DaisyToolchain) or the
 [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) — plus `dfu-util` and
 `python3` with `pyserial`.
 
@@ -141,10 +156,10 @@ make
 ```
 
 libDaisy, the A2 engine and the IR convolver are git submodules pinned to releases (`libDaisy/` at v9.0.0, the
-first release that knows the Daisy Seed3; `embedded/`; `daisyConvol/` at v0.1.0). The first `make` builds libDaisy's static library, after which only the
-firmware rebuilds. If you cloned without `--recurse-submodules`, run `git submodule update --init --recursive`.
-To build against a libDaisy checkout elsewhere, pass `LIBDAISY_DIR=/path/to/libDaisy`. `make libdaisy` rebuilds the
-library, `make clean-all` cleans both.
+first release that knows the Daisy Seed3; `embedded/`; `daisyConvol/` at v0.1.0). The first `make` builds
+libDaisy's static library, after which only the firmware rebuilds. If you cloned without `--recurse-submodules`,
+run `git submodule update --init --recursive`. To build against a libDaisy checkout elsewhere, pass
+`LIBDAISY_DIR=/path/to/libDaisy`. `make libdaisy` rebuilds the library, `make clean-all` cleans both.
 
 To move a submodule to a newer release, check out the new tag inside it (`git -C libDaisy checkout vX.Y.Z &&
 git -C libDaisy submodule update --init --recursive`), rebuild, and commit the submodule pointer.
@@ -180,8 +195,9 @@ command over USB serial and the pedal reboots into the bootloader by itself. The
 Presets live in a separate QSPI flash region at `0x90600000`, independent of the firmware: reflash the bank to
 change tones, never the firmware.
 
-**Companion app** (`app/`, Chrome or Edge): sign in with your TONE3000 account, pick a tone for each block from the
-library, preview it in the browser, then **Send DFU trigger** and **Connect and flash**. The app converts each
+**[Companion app](https://www.tone3000.com/diy-pedal/app)** (`app/`, Chrome or Edge): sign in with your TONE3000
+account, pick a tone for each block from the library, preview it in the browser, then click **Flash to pedal**,
+**Send DFU trigger** and **Connect and flash**. The app converts each
 `.nam` to `.namb`, packs the four presets and writes the bank over WebUSB. **Sync from pedal** reads the presets
 back off a plugged-in pedal (the bank stores each block's TONE3000 model id), and the app remembers your presets in
 the browser between visits. See [`app/README.md`](app/README.md).
@@ -252,9 +268,20 @@ Both work in LOGGING and non-LOGGING builds.
 The TONE3000 × Daisy DIY Pedal is a [TONE3000](https://www.tone3000.com) project: firmware, companion app, circuit,
 PCB and enclosure. The firmware grew out of our work on
 [running NAM on embedded hardware](https://www.tone3000.com/blog/running-nam-on-embedded-hardware) and the A2
-architecture. [Daisy Audio](https://daisy.audio) makes the Daisy Seed3 and [Tayda Electronics](https://www.taydaelectronics.com)
-bundles the kit. It's an open source pedal you build yourself; TONE3000 doesn't sell or assemble pedals, and build
-support happens in the community (see the [guide](https://www.tone3000.com/guides/diy-pedal#need-help)).
+architecture. [Daisy Audio](https://daisy.audio/TONE3000) makes the Daisy Seed3 and
+[Tayda Electronics](https://www.taydaelectronics.com/tone3000-diy-guitar-pedal-kit.html) bundles the kit. The
+[announcement](https://www.tone3000.com/blog/tone3000-daisy-diy-pedal-kit) has the full story, and the
+[release video](https://www.youtube.com/watch?v=Rrxt4IpQ4Ic) with Death By Audio shows the pedal in action.
+
+It's an open source community project you build yourself, not a TONE3000 product: TONE3000 doesn't sell, assemble
+or warranty these pedals, and build support happens in the community (see
+[Need Help](https://www.tone3000.com/guides/diy-pedal#need-help) in the guide):
+
+- [TONE3000 Discord](https://discord.gg/wEV8uEWDnb): build questions; include photos of both sides of the board
+- [Daisy forum](https://forum.electro-smith.com): Daisy Seed3, bootloader and USB questions
+- [GitHub issues](https://github.com/tone-3000/t3k-diy-pedal/issues): firmware, app and hardware file bugs
+- [Tayda Electronics](https://www.taydaelectronics.com/tone3000-diy-guitar-pedal-kit.html): kit, parts and shipping
+  questions
 
 ## License
 
