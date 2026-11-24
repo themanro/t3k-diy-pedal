@@ -1,6 +1,6 @@
 # TONE3000 × Daisy DIY Pedal
 
-The TONE3000 × Daisy DIY Pedal (the "T3K Pedal") is an open source guitar and bass pedal that runs
+The TONE3000 × Daisy DIY Pedal Kit is an open source guitar and bass pedal that runs
 [Neural Amp Modeler A2](https://www.tone3000.com/blog/introducing-neural-amp-modeler-nam-architecture-2-a2)
 captures on an [Electrosmith Daisy Seed3](https://daisy.audio/TONE3000). This repository holds everything in the
 kit: the firmware, the companion web app that loads presets from [TONE3000](https://www.tone3000.com), and the
