@@ -6,3 +6,5 @@ hardware/enclosure/cad/enclosure.glb
 hardware/3d/board-full.glb
 hardware/renders/out/
 __pycache__/
+host/render
+host/*.o
